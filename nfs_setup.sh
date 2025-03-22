@@ -6,11 +6,6 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# Lấy địa chỉ IP của VPS
-get_ip() {
-  hostname -I | awk '{print $1}'
-}
-
 # Cài đặt NFS Server trên Ubuntu/Debian
 install_nfs_server_ubuntu() {
   apt update
@@ -118,9 +113,8 @@ EOF
 main() {
   
 echo "Thiết lập NFS Server..."
-local ip_vps1=$(get_ip)
-echo "Địa chỉ IP của VPS chính (NFS Server): $ip_vps1"
 
+read -p "Nhập địa chỉ IP của VPS chính (NFS Server): " ip_vps1 
 read -p "Nhập địa chỉ IP của VPS khác (NFS Client): " ip_vps2 
 
 if [[ -f /etc/debian_version ]]; then 
@@ -135,14 +129,11 @@ restart_nfs_service
 configure_firewall "$ip_vps1" "$ip_vps2" 
 
 echo "Thiết lập NFS Client..."
-local ip_vps_chinh=$(get_ip)
-echo "Địa chỉ IP của VPS Client: $ip_vps_chinh"
-
 install_nfs_client 
 create_mount_points 
-mount_nfs "$ip_vps_chinh" 
+mount_nfs "$ip_vps2" # Sử dụng IP VPS phụ để mount từ VPS chính.
 check_mount_success 
-configure_auto_mount "$ip_vps_chinh" 
+configure_auto_mount "$ip_vps2"
 
 echo "Hoàn tất thiết lập NFS!"
 }
