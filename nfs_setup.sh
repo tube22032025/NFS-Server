@@ -112,28 +112,32 @@ EOF
 # Chạy script chính 
 main() {
   
-echo "Thiết lập NFS Server..."
+echo "Thiết lập NFS..."
 
 read -p "Nhập địa chỉ IP của VPS chính (NFS Server): " ip_vps1 
-read -p "Nhập địa chỉ IP của VPS khác (NFS Client): " ip_vps2 
+read -p "Nhập địa chỉ IP của VPS phụ (NFS Client): " ip_vps2 
 
-if [[ -f /etc/debian_version ]]; then 
-   install_nfs_server_ubuntu 
-else 
-   install_nfs_server_centos 
-fi 
+if [[ $(hostname) == *"server"* ]]; then # Kiểm tra nếu hostname chứa 'server'
+   echo "Cài đặt NFS Server..."
+   if [[ -f /etc/debian_version ]]; then 
+      install_nfs_server_ubuntu 
+   else 
+      install_nfs_server_centos 
+   fi 
 
-create_shared_directories 
-configure_exports "$ip_vps1" "$ip_vps2" 
-restart_nfs_service 
-configure_firewall "$ip_vps1" "$ip_vps2" 
+   create_shared_directories 
+   configure_exports "$ip_vps1" "$ip_vps2" 
+   restart_nfs_service 
+   configure_firewall "$ip_vps1" "$ip_vps2" 
 
-echo "Thiết lập NFS Client..."
-install_nfs_client 
-create_mount_points 
-mount_nfs "$ip_vps2" # Sử dụng IP VPS phụ để mount từ VPS chính.
-check_mount_success 
-configure_auto_mount "$ip_vps2"
+else # Nếu không phải server, coi như là client.
+   echo "Cài đặt NFS Client..."
+   install_nfs_client 
+   create_mount_points 
+   mount_nfs "$ip_vps1" # Sử dụng IP VPS chính để mount.
+   check_mount_success 
+   configure_auto_mount "$ip_vps1"
+fi
 
 echo "Hoàn tất thiết lập NFS!"
 }
